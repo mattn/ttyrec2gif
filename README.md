@@ -7,7 +7,7 @@ create animated gif from ttyrecord.
 ## Usage
 
 ```console
-$ cat ttyrecord | ttyrec2gif > animated.gif
+$ ttyrec2gif ttyrecord
 ```
 
 ## Requirements
