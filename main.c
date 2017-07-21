@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <memory.h>
 #include <unistd.h>
 #include <gd.h>
 #include <gdfontl.h>
@@ -120,6 +121,7 @@ void
 usage(void) {
   printf("Usage: ttyrec2gif [OPTION] [FILE]\n");
   printf("  -o FILE  Set output file \n");
+  printf("  -f FONT  Set font file \n");
   exit(EXIT_FAILURE);
 }
 
@@ -140,12 +142,16 @@ main(int argc, char* argv[]) {
   FILE *in = NULL, *out = NULL;
 
   while (1) {
-    int ch = getopt(argc, argv, "o:");
+    int ch = getopt(argc, argv, "o:f:");
     if (ch == EOF) break;
     switch (ch) {
       case 'o':
         if (optarg == NULL) usage();
         out = fopen(optarg, "wb");
+        break;
+      case 'f':
+        if (optarg == NULL) usage();
+        f = optarg;
         break;
       default:
         usage();
@@ -176,6 +182,10 @@ main(int argc, char* argv[]) {
   h = 24 * dy;
 
   img = gdImageCreate(w, h);
+  if (!img) {
+    perror("gdImageCreate");
+    return EXIT_FAILURE;
+  }
   gdImageGifAnimBegin(img, out, 0, -1);
 
   while (ttyread(in, &header, &buf) != 0) {
@@ -233,8 +243,8 @@ main(int argc, char* argv[]) {
         color);
 
     /* add frame with delay */
-    gdImageTrueColorToPalette(fimg, TRUE, gdMaxColors);
-    gdImageGifAnimAdd(fimg, out, TRUE, 0, 0, header.diff/10000, gdDisposalNone, NULL); 
+    gdImageTrueColorToPalette(fimg, 1, gdMaxColors);
+    gdImageGifAnimAdd(fimg, out, 1, 0, 0, header.diff/10000, gdDisposalNone, NULL);
     gdImageDestroy(fimg);
   }
   gdImageGifAnimEnd(out);

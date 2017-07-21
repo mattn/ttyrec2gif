@@ -3,8 +3,8 @@ SRCS = \
 
 OBJS = $(subst .c,.o,$(SRCS))
 
-CFLAGS = -I. -Wall
-LIBS = -L. -lgd -lvterm
+CFLAGS = -I. -Ilibvterm/include -Wall
+LIBS = -L. -Llibvterm/.libs -lgd -lvterm
 TARGET = ttyrec2gif
 ifeq ($(OS),Windows_NT)
 TARGET := $(TARGET).exe
