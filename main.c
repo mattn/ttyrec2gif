@@ -1,4 +1,3 @@
-#include <ws2tcpip.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
