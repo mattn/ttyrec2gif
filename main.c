@@ -105,18 +105,6 @@ utf_char2bytes(int c, char *buf) {
   return 6;
 }
 
-struct timeval
-timeval_diff(struct timeval tv1, struct timeval tv2) {
-  struct timeval diff;
-  diff.tv_sec = tv2.tv_sec - tv1.tv_sec;
-  diff.tv_usec = tv2.tv_usec - tv1.tv_usec;
-  if (diff.tv_usec < 0) {
-    diff.tv_sec--;
-    diff.tv_usec += 1000000;
-  }
-  return diff;
-}
-
 void
 usage(void) {
   printf("Usage: ttyrec2gif [OPTION] [FILE]\n");
@@ -206,7 +194,8 @@ main(int argc, char* argv[]) {
         if (cell.chars[0] == 0) continue;
         b[utf_char2bytes((int) *cell.chars, b)] = 0;
 
-        color = gdImageColorResolve(fimg,
+        color = gdImageColorResolve(
+            fimg,
             cell.bg.red,
             cell.bg.green,
             cell.bg.blue);
@@ -217,11 +206,13 @@ main(int argc, char* argv[]) {
             (pos.col + cell.width) * dx,
             (pos.row + cell.width) * dy,
             color);
-        color = gdImageColorResolve(fimg,
+        color = gdImageColorResolve(
+            fimg,
             cell.fg.red,
             cell.fg.green,
             cell.fg.blue);
-        puts(gdImageStringFT(fimg, NULL, color, f,
+        puts(gdImageStringFT(
+              fimg, NULL, color, f,
               fs, 0.0,
               pos.col * dx - brect[6],
               pos.row * dy - brect[7],
