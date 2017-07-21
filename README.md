@@ -1,6 +1,6 @@
 # ttyrec2gif
 
-![](https://raw.githubusercontent.com/mattn/ttyrec2gif/master/screenshot.gif)
+![ttyrec2gif](https://raw.githubusercontent.com/mattn/ttyrec2gif/master/screenshot.gif)
 
 create animated gif from ttyrecord.
 
