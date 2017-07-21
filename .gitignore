@@ -1,0 +1,7 @@
+vterm.h
+vterm_keycodes.h
+*.exe
+*.o
+animated.gif
+ttyrecord
+libvterm.a
