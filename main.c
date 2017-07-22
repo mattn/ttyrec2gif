@@ -38,7 +38,8 @@ convert_to_little_endian(int x) {
 
 static int
 read_header(FILE *fp, Header *h) {
-  static unsigned long old = 0, cur;
+  static unsigned long old = 0;
+  unsigned long cur;
   int buf[3];
   if (fread(buf, sizeof(int), 3, fp) == 0) {
     return 0;
