@@ -52,7 +52,7 @@ read_header(FILE *fp, Header *h) {
   cur = convert_to_little_endian(buf[0]) * 1000000
     + convert_to_little_endian(buf[1]);
 
-  h->diff = cur - old;
+  h->diff = old == 0 ? 0 : cur - old;
   h->len  = convert_to_little_endian(buf[2]);
   old = cur;
   return 1;
@@ -250,11 +250,12 @@ main(int argc, char* argv[]) {
   vterm_screen_reset(screen, 1);
 
   while (ttyread(in, &header, &buf) != 0) {
+    /* write screen */
+    write_schene(out, vt, header.diff/10000);
+
     /* write to terminal */
     vterm_input_write(vt, buf, header.len);
     free(buf);
-    /* write screen */
-    write_schene(out, vt, header.diff/10000);
   }
   gdImageGifAnimEnd(out);
   fclose(in);
