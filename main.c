@@ -53,7 +53,7 @@ read_header(FILE *fp, Header *h) {
   return 1;
 }
 
-int
+static int
 ttyread(FILE *fp, Header *h, char **buf) {
   if (read_header(fp, h) == 0)
     return 0;
@@ -106,7 +106,7 @@ utf_char2bytes(int c, char *buf) {
   return 6;
 }
 
-void
+static void
 usage(void) {
   printf("Usage: ttyrec2gif [OPTION] [FILE]\n");
   printf("  -o FILE  Set output file \n");
@@ -129,6 +129,7 @@ main(int argc, char* argv[]) {
   VTerm *vt;
   VTermScreen *screen;
   FILE *in = NULL, *out = NULL;
+  int verbose = 0;
 
   while (1) {
     int ch = getopt(argc, argv, "o:f:");
@@ -141,6 +142,9 @@ main(int argc, char* argv[]) {
       case 'f':
         if (optarg == NULL) usage();
         f = optarg;
+        break;
+      case 'v':
+        verbose = 1;
         break;
       default:
         usage();
