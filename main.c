@@ -217,20 +217,14 @@ main(int argc, char* argv[]) {
   in = fopen(argv[optind], "rb");
   if (!in) {
     perror("fopen");
-    exit(1);
+    return EXIT_FAILURE;
   }
   out = fopen(fname, "wb");
   if (!out) {
     perror("fopen");
-    exit(1);
+    fclose(in);
+    return EXIT_FAILURE;
   }
-
-  /* setup terminal */
-  vt = vterm_new(24, 80);
-  screen = vterm_obtain_screen(vt);
-  vterm_set_utf8(vt, 1);
-  vterm_screen_enable_altscreen(screen, 1);
-  vterm_screen_reset(screen, 1);
 
   /* calculate cell size */
   gdImageStringFT(NULL, brect, 0, f, fs, 0.0, 0, 0, "\u25a0");
@@ -242,9 +236,18 @@ main(int argc, char* argv[]) {
   img = gdImageCreate(w, h);
   if (!img) {
     perror("gdImageCreate");
+    fclose(in);
+    fclose(out);
     return EXIT_FAILURE;
   }
   gdImageGifAnimBegin(img, out, 0, -1);
+
+  /* setup terminal */
+  vt = vterm_new(24, 80);
+  screen = vterm_obtain_screen(vt);
+  vterm_set_utf8(vt, 1);
+  vterm_screen_enable_altscreen(screen, 1);
+  vterm_screen_reset(screen, 1);
 
   while (ttyread(in, &header, &buf) != 0) {
     /* write to terminal */
