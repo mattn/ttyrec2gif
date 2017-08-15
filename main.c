@@ -15,7 +15,7 @@
 static char *f = "VL-Gothic-Regular";
 static double fs = 8.0;
 static int brect[8] = {0};
-static int w, h, dx, dy;
+static int w = 80, h = 24, dx, dy;
 
 typedef struct header {
   int diff;
@@ -130,7 +130,7 @@ write_schene(FILE* out, VTerm* vt, int duration) {
   screen = vterm_obtain_screen(vt);
 
   /* render terminal */
-  fimg = gdImageCreateTrueColor(w, h);
+  fimg = gdImageCreateTrueColor(w * dx, h * dy);
   for (pos.row = 0; pos.row < 24; pos.row++) {
     for (pos.col = 0; pos.col < 80; pos.col++) {
       char b[7] = {0};
@@ -196,7 +196,7 @@ main(int argc, char* argv[]) {
   gdImagePtr img;
 
   while (1) {
-    int ch = getopt(argc, argv, "o:f:");
+    int ch = getopt(argc, argv, "o:f:w:h:");
     if (ch == EOF) break;
     switch (ch) {
       case 'o':
@@ -206,6 +206,14 @@ main(int argc, char* argv[]) {
       case 'f':
         if (optarg == NULL) usage();
         f = optarg;
+        break;
+      case 'w':
+        if (optarg == NULL) usage();
+        w = atoi(optarg);
+        break;
+      case 'h':
+        if (optarg == NULL) usage();
+        h = atoi(optarg);
         break;
       default:
         usage();
@@ -230,17 +238,14 @@ main(int argc, char* argv[]) {
   gdImageStringFT(NULL, brect, 0, f, fs, 0.0, 0, 0, "\u25a0");
   dx = (brect[4] - brect[6]) / 2;
   dy = brect[1] - brect[7];
-  w = 80 * dx;
-  h = 24 * dy;
 
-  img = gdImageCreate(w, h);
+  img = gdImageCreate(w * dx, h * dy);
   if (!img) {
     perror("gdImageCreate");
     fclose(in);
     fclose(out);
     return EXIT_FAILURE;
   }
-  gdImageGifAnimBegin(img, out, 0, -1);
 
   /* setup terminal */
   vt = vterm_new(24, 80);
@@ -249,6 +254,7 @@ main(int argc, char* argv[]) {
   vterm_screen_enable_altscreen(screen, 1);
   vterm_screen_reset(screen, 1);
 
+  gdImageGifAnimBegin(img, out, 0, -1);
   while (ttyread(in, &header, &buf) != 0) {
     /* write screen */
     write_schene(out, vt, header.diff/10000);
@@ -258,11 +264,12 @@ main(int argc, char* argv[]) {
     free(buf);
   }
   gdImageGifAnimEnd(out);
+  gdImageDestroy(img);
+
+  vterm_free(vt);
+
   fclose(in);
   fclose(out);
-
-  gdImageDestroy(img);
-  vterm_free(vt);
   return EXIT_SUCCESS;
 }
 
