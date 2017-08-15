@@ -174,7 +174,7 @@ write_schene(FILE* out, VTerm* vt, int duration) {
       pos.col * dx,
       pos.row * dy,
       (pos.col + cell.width) * dx,
-      (pos.row + cell.width) * dy,
+      (pos.row + 1) * dy,
       color);
 
   /* add frame with delay */
@@ -186,12 +186,14 @@ write_schene(FILE* out, VTerm* vt, int duration) {
 int
 main(int argc, char* argv[]) {
   char *buf;
-  gdImagePtr img;
   Header header;
+  VTerm* vt;
+  VTermScreen* screen;
+  char* fname = "animated.gif";
+  FILE* in = NULL;
+  FILE* out = NULL;
 
-  VTerm *vt;
-  VTermScreen *screen;
-  FILE *in = NULL, *out = NULL;
+  gdImagePtr img;
 
   while (1) {
     int ch = getopt(argc, argv, "o:f:");
@@ -199,7 +201,7 @@ main(int argc, char* argv[]) {
     switch (ch) {
       case 'o':
         if (optarg == NULL) usage();
-        out = fopen(optarg, "wb");
+        fname = optarg;
         break;
       case 'f':
         if (optarg == NULL) usage();
@@ -213,10 +215,14 @@ main(int argc, char* argv[]) {
   if (optind >= argc) usage();
 
   in = fopen(argv[optind], "rb");
-  if (!in) perror("fopen");
+  if (!in) {
+    perror("fopen");
+    exit(1);
+  }
+  out = fopen(fname, "wb");
   if (!out) {
-    out = fopen("animated.gif", "wb");
-    if (!out) perror("fopen");
+    perror("fopen");
+    exit(1);
   }
 
   /* setup terminal */
