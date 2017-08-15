@@ -160,6 +160,7 @@ main(int argc, char* argv[]) {
   vt = vterm_new(24, 80);
   screen = vterm_obtain_screen(vt);
   vterm_set_utf8(vt, 1);
+  vterm_screen_enable_altscreen(screen, 1);
   vterm_screen_reset(screen, 1);
 
   /* calculate cell size */
