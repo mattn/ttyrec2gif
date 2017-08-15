@@ -12,6 +12,11 @@
       (((unsigned int) (val) & (unsigned int) 0x00ff0000U) >>  8) | \
       (((unsigned int) (val) & (unsigned int) 0xff000000U) >> 24)))
 
+static char *f = "VL-Gothic-Regular";
+static double fs = 8.0;
+static int brect[8] = {0};
+static int w, h, dx, dy;
+
 typedef struct header {
   int diff;
   int len;
@@ -114,22 +119,79 @@ usage(void) {
   exit(EXIT_FAILURE);
 }
 
+static void
+write_schene(FILE* out, VTerm* vt, int duration) {
+  int color;
+  VTermScreen* screen;
+  VTermPos pos;
+  VTermScreenCell cell;
+  gdImagePtr fimg;
+
+  screen = vterm_obtain_screen(vt);
+
+  /* render terminal */
+  fimg = gdImageCreateTrueColor(w, h);
+  for (pos.row = 0; pos.row < 24; pos.row++) {
+    for (pos.col = 0; pos.col < 80; pos.col++) {
+      char b[7] = {0};
+      vterm_screen_get_cell(screen, pos, &cell);
+      if (cell.chars[0] == 0) continue;
+      b[utf_char2bytes((int) *cell.chars, b)] = 0;
+
+      color = gdImageColorResolve(
+          fimg,
+          cell.bg.red,
+          cell.bg.green,
+          cell.bg.blue);
+      gdImageFilledRectangle(
+          fimg,
+          pos.col * dx,
+          pos.row * dy,
+          (pos.col + cell.width) * dx,
+          (pos.row + cell.width) * dy,
+          color);
+      color = gdImageColorResolve(
+          fimg,
+          cell.fg.red,
+          cell.fg.green,
+          cell.fg.blue);
+      puts(gdImageStringFT(
+            fimg, NULL, color, f,
+            fs, 0.0,
+            pos.col * dx - brect[6],
+            pos.row * dy - brect[7],
+            b));
+      pos.col += cell.width - 1;
+    }
+  }
+
+  /* render cursor */
+  vterm_state_get_cursorpos(vterm_obtain_state(vt), &pos);
+  vterm_screen_get_cell(screen, pos, &cell);
+  color = gdImageColorResolve(fimg, 255, 255, 255);
+  gdImageFilledRectangle(
+      fimg,
+      pos.col * dx,
+      pos.row * dy,
+      (pos.col + cell.width) * dx,
+      (pos.row + cell.width) * dy,
+      color);
+
+  /* add frame with delay */
+  gdImageTrueColorToPalette(fimg, 1, gdMaxColors);
+  gdImageGifAnimAdd(fimg, out, 1, 0, 0, duration, gdDisposalNone, NULL);
+  gdImageDestroy(fimg);
+}
+
 int
 main(int argc, char* argv[]) {
-  int brect[8];
-  int w, h, dx, dy;
   char *buf;
-
-  double fs;
-  char *f = "VL-Gothic-Regular";
   gdImagePtr img;
   Header header;
 
-  VTermPos pos;
   VTerm *vt;
   VTermScreen *screen;
   FILE *in = NULL, *out = NULL;
-  int verbose = 0;
 
   while (1) {
     int ch = getopt(argc, argv, "o:f:");
@@ -142,9 +204,6 @@ main(int argc, char* argv[]) {
       case 'f':
         if (optarg == NULL) usage();
         f = optarg;
-        break;
-      case 'v':
-        verbose = 1;
         break;
       default:
         usage();
@@ -168,7 +227,6 @@ main(int argc, char* argv[]) {
   vterm_screen_reset(screen, 1);
 
   /* calculate cell size */
-  fs = 8.0;
   gdImageStringFT(NULL, brect, 0, f, fs, 0.0, 0, 0, "\u25a0");
   dx = (brect[4] - brect[6]) / 2;
   dy = brect[1] - brect[7];
@@ -183,66 +241,11 @@ main(int argc, char* argv[]) {
   gdImageGifAnimBegin(img, out, 0, -1);
 
   while (ttyread(in, &header, &buf) != 0) {
-    gdImagePtr fimg;
-    VTermScreenCell cell;
-    int color;
-
     /* write to terminal */
     vterm_input_write(vt, buf, header.len);
     free(buf);
-
-    /* render terminal */
-    fimg = gdImageCreateTrueColor(w, h);
-    for (pos.row = 0; pos.row < 24; pos.row++) {
-      for (pos.col = 0; pos.col < 80; pos.col++) {
-        char b[7] = {0};
-        vterm_screen_get_cell(screen, pos, &cell);
-        if (cell.chars[0] == 0) continue;
-        b[utf_char2bytes((int) *cell.chars, b)] = 0;
-
-        color = gdImageColorResolve(
-            fimg,
-            cell.bg.red,
-            cell.bg.green,
-            cell.bg.blue);
-        gdImageFilledRectangle(
-            fimg,
-            pos.col * dx,
-            pos.row * dy,
-            (pos.col + cell.width) * dx,
-            (pos.row + cell.width) * dy,
-            color);
-        color = gdImageColorResolve(
-            fimg,
-            cell.fg.red,
-            cell.fg.green,
-            cell.fg.blue);
-        puts(gdImageStringFT(
-              fimg, NULL, color, f,
-              fs, 0.0,
-              pos.col * dx - brect[6],
-              pos.row * dy - brect[7],
-              b));
-        pos.col += cell.width - 1;
-      }
-    }
-
-    /* render cursor */
-    vterm_state_get_cursorpos(vterm_obtain_state(vt), &pos);
-    vterm_screen_get_cell(screen, pos, &cell);
-    color = gdImageColorResolve(fimg, 255, 255, 255);
-    gdImageFilledRectangle(
-        fimg,
-        pos.col * dx,
-        pos.row * dy,
-        (pos.col + cell.width) * dx,
-        (pos.row + cell.width) * dy,
-        color);
-
-    /* add frame with delay */
-    gdImageTrueColorToPalette(fimg, 1, gdMaxColors);
-    gdImageGifAnimAdd(fimg, out, 1, 0, 0, header.diff/10000, gdDisposalNone, NULL);
-    gdImageDestroy(fimg);
+    /* write screen */
+    write_schene(out, vt, header.diff/10000);
   }
   gdImageGifAnimEnd(out);
   fclose(in);
